@@ -16,7 +16,7 @@ class Matrix:
                 # initial residual vector
                 self.matrix = [1 for _ in range(self.n)]
             else:
-                for i in range(self.n):
+                for i in range(1,self.n+1):
                     self.matrix.append(math.sin(i * (3 + 1)))
             col = [[element] for element in self.matrix]
             self.matrix = col
@@ -62,7 +62,7 @@ class Matrix:
         newUpper = Matrix(self.n,0,0,0)
         for i in range(self.n):
             for j in range(self.n):
-                if i>j:
+                if i<j:
                     newUpper.matrix[i][j] = self.matrix[i][j]
 
         return newUpper
@@ -71,7 +71,7 @@ class Matrix:
         newLower = Matrix(self.n,0,0,0)
         for i in range(self.n):
             for j in range(self.n):
-                if i<j:
+                if i>j:
                     newLower.matrix[i][j] = self.matrix[i][j]
 
         return newLower
