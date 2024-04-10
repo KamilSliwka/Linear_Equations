@@ -1,14 +1,27 @@
 
 from vector import Vector
+import math
+import numpy as np
 class Matrix:
 
-    def __init__(self,a1,a2,a3):
-        self.n = 7
+    def __init__(self,col,a1,a2,a3,empty=0):
+        self.n = 10
+        self.col =col
         self.a1 = a1
         self.a2 = a2
         self.a3 = a3
         self.matrix = []
-        self.createMatrix()
+        if col == 1:
+            if empty != 0:
+                # initial residual vector
+                self.matrix = [1 for _ in range(self.n)]
+            else:
+                for i in range(self.n):
+                    self.matrix.append(math.sin(i * (3 + 1)))
+            col = [[element] for element in self.matrix]
+            self.matrix = col
+        else:
+            self.createMatrix()
 
     def createMatrix(self):
         for i in range(self.n):
@@ -34,19 +47,19 @@ class Matrix:
             return newVector
 
     def multiplication(self, matrix2):
-        newMatrix = Matrix(0, 0, 0)
+        newMatrix = Matrix(matrix2.col,0, 0, 0,1)
         for i in range(self.n):
-            for j in range(matrix2.n):
+            for j in range(matrix2.col):
                 element = 0
-                for k in range(self.n):
+                for k in range(self.col):
                     element += self.matrix[i][k] * matrix2.matrix[k][j]
                 newMatrix.matrix[i][j] = element
         return newMatrix
     def diagonal(self):
-        newDiagonal = Matrix(self.a1,0,0)
+        newDiagonal = Matrix(self.n,self.a1,0,0)
         return newDiagonal
     def upper(self):
-        newUpper = Matrix(0,0,0)
+        newUpper = Matrix(self.n,0,0,0)
         for i in range(self.n):
             for j in range(self.n):
                 if i>j:
@@ -55,7 +68,7 @@ class Matrix:
         return newUpper
 
     def lower(self):
-        newLower = Matrix(0,0,0)
+        newLower = Matrix(self.n,0,0,0)
         for i in range(self.n):
             for j in range(self.n):
                 if i<j:
@@ -65,20 +78,20 @@ class Matrix:
 
     # macierz razy Liczba
     def multiplicationByNumber(self, number):
-        newMatrix = Matrix(0,0,0)
+        newMatrix = Matrix(self.col,0,0,0)
         for i in range(self.n):
-            for j in range(self.n):
+            for j in range(self.col):
                     newMatrix.matrix[i][j] = self.matrix[i][j]*number
         return newMatrix
 
     def addition(self, matrix2):
-        newMatrix = Matrix(0, 0, 0)
+        newMatrix = Matrix(self.col,0, 0, 0)
         for i in range(self.n):
-            for j in range(self.n):
+            for j in range(self.col):
                     newMatrix.matrix[i][j] = self.matrix[i][j] + matrix2.matrix[i][j]
         return newMatrix
     def invDiag(self):
-        newMatrix = Matrix(0, 0, 0)
+        newMatrix = Matrix(self.n,0, 0, 0)
         for i in range(self.n):
             for j in range(self.n):
                 if j == i:
@@ -86,7 +99,18 @@ class Matrix:
         return newMatrix
     def isDiagonalMatrix(self):
         for i in range(self.n):
-            for j in range(self.n):
+            for j in range(self.col):
                 if j != i and self.matrix[i][j]!=0:
                     return False
         return True
+
+    def norm(self):
+        value = 0
+        for row in self.matrix:
+            for element in row:
+                value += element**2
+
+        return math.sqrt(value)
+
+    def to_np_array(self):
+        return np.array(self.matrix)
