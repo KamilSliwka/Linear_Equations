@@ -4,8 +4,8 @@ import math
 import numpy as np
 class Matrix:
 
-    def __init__(self,col,a1,a2,a3,empty=0):
-        self.n = 10
+    def __init__(self,row,col,a1,a2,a3,empty=0):
+        self.n = row
         self.col =col
         self.a1 = a1
         self.a2 = a2
@@ -47,7 +47,7 @@ class Matrix:
             return newVector
 
     def multiplication(self, matrix2):
-        newMatrix = Matrix(matrix2.col,0, 0, 0,1)
+        newMatrix = Matrix(matrix2.n,matrix2.col,0, 0, 0,1)
         for i in range(self.n):
             for j in range(matrix2.col):
                 element = 0
@@ -56,10 +56,10 @@ class Matrix:
                 newMatrix.matrix[i][j] = element
         return newMatrix
     def diagonal(self):
-        newDiagonal = Matrix(self.n,self.a1,0,0)
+        newDiagonal = Matrix(self.n,self.n,self.a1,0,0)
         return newDiagonal
     def upper(self):
-        newUpper = Matrix(self.n,0,0,0)
+        newUpper = Matrix(self.n,self.n,0,0,0)
         for i in range(self.n):
             for j in range(self.n):
                 if i<j:
@@ -68,7 +68,7 @@ class Matrix:
         return newUpper
 
     def lower(self):
-        newLower = Matrix(self.n,0,0,0)
+        newLower = Matrix(self.n,self.n,0,0,0)
         for i in range(self.n):
             for j in range(self.n):
                 if i>j:
@@ -78,20 +78,20 @@ class Matrix:
 
     # macierz razy Liczba
     def multiplicationByNumber(self, number):
-        newMatrix = Matrix(self.col,0,0,0)
+        newMatrix = Matrix(self.n,self.col,0,0,0)
         for i in range(self.n):
             for j in range(self.col):
                     newMatrix.matrix[i][j] = self.matrix[i][j]*number
         return newMatrix
 
     def addition(self, matrix2):
-        newMatrix = Matrix(self.col,0, 0, 0)
+        newMatrix = Matrix(self.n,self.col,0, 0, 0)
         for i in range(self.n):
             for j in range(self.col):
                     newMatrix.matrix[i][j] = self.matrix[i][j] + matrix2.matrix[i][j]
         return newMatrix
     def invDiag(self):
-        newMatrix = Matrix(self.n,0, 0, 0)
+        newMatrix = Matrix(self.n,self.n,0, 0, 0)
         for i in range(self.n):
             for j in range(self.n):
                 if j == i:

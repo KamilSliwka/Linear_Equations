@@ -5,7 +5,7 @@ import time
 
 
 def Jacobi(A, b):
-    r = Matrix(1, 0, 0, 0, 1)
+    r = Matrix(A.n,1, 0, 0, 0, 1)
     U = A.upper()
     L = A.lower()
     D = A.diagonal()
@@ -28,7 +28,7 @@ def Jacobi(A, b):
 
 
 def GaussSeidl(A, b):
-    r = Matrix(1, 0, 0, 0, 1)
+    r = Matrix(A.n,1, 0, 0, 0, 1)
     U = A.upper()
     L = A.lower()
     D = A.diagonal()
@@ -51,8 +51,8 @@ def GaussSeidl(A, b):
     return (r, iterations, residuum)
 
 def distributionLU(A,b):
-    L = Matrix(A.n, 1, 0, 0)
-    U = A
+    L = Matrix(A.n,A.n, 1, 0, 0)
+    U = A.multiplicationByNumber(1)
     for k in range(A.n-1):
         for j in range(k+1,A.n):
             L.matrix[j][k] = U.matrix[j][k]/U.matrix[k][k]
@@ -61,7 +61,7 @@ def distributionLU(A,b):
             # sequence = U.matrix[j][k:A.n]
             # U.matrix[j][k:A.n] =[x-x * multiplier for x in sequence]
             for m in range(k,A.n):
-                U.matrix[j][m] = U.matrix[j][m] - U.matrix[j][m]*L.matrix[j][k]
+                U.matrix[j][m] = U.matrix[j][m] - U.matrix[k][m]*L.matrix[j][k]
     return U,L
 def factorizationLU(A,b):
     [U,L] = distributionLU(A,b)
@@ -74,7 +74,7 @@ def factorizationLU(A,b):
     return X,norm
 
 def forwardSubstitution(L, B):
-    r = Matrix(B.col, 0, 0, 0, 1)
+    r = Matrix(B.n,B.col, 0, 0, 0, 1)
     for k in range(B.col):
         for i in range(L.n):
             x = 0
@@ -84,7 +84,7 @@ def forwardSubstitution(L, B):
     return r
 
 def backwardSubstitution(U, B):
-    r = Matrix(B.col, 0, 0, 0, 1)
+    r = Matrix(B.n,B.col, 0, 0, 0, 1)
     for k in range(B.col):
         for i in range(U.n-1,-1,-1):
             x = 0
@@ -94,13 +94,20 @@ def backwardSubstitution(U, B):
     return r
 
 
+def plotTime(method,time):
+    plt.plot(size, time)
+    plt.xlabel("rozmiar macierzy")
+    plt.ylabel("czas obliczeń")
+    title = "["+method+"]"
+    plt.title(title)
+    plt.show()
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     N = 10
-    A = Matrix(N, 3, -1, -1)
-    b = Matrix(1, 0, 0, 0)
+    A = Matrix(N,N, 3, -1, -1)
+    b = Matrix(N,1, 0, 0, 0)
     start_time = time.time()
     [r, iterations, residuum] = Jacobi(A, b)
     end_time = time.time()
@@ -115,7 +122,7 @@ if __name__ == '__main__':
     plt.xlabel("iteracje")
     plt.ylabel("wrtość normy residuum")
     plt.title("zmiana normy residuum w kolejnych iteracjach [Jacobi]")
-    plt.xticks(range(0, len(iter) + 1, 1))
+    plt.xticks(range(0, len(iter) + 1, 50))
     plt.show()
 
     start_time = time.time()
@@ -132,9 +139,9 @@ if __name__ == '__main__':
     plt.xlabel("iteracje")
     plt.ylabel("wrtość normy residuum")
     plt.title("zmiana normy residuum w kolejnych iteracjach [Gauss-Seidl]")
-    plt.xticks(range(0, len(iter) + 1, 1))
+    plt.xticks(range(0, len(iter) + 1, 50))
     plt.show()
-    # Przykładowa macierz współczynników A i wektor prawych stron b
+    # # Przykładowa macierz współczynników A i wektor prawych stron b
 
     A1 = A.to_np_array()
     b1 = b.to_np_array()
@@ -150,3 +157,35 @@ if __name__ == '__main__':
     print("LU: ",r.matrix)
     print(residuum)
     print("Czas obliczeń metodą faktoryzacji LU: ", execution_time, " ")
+
+    size = [10,50,100,200,400]
+    timeGS = []
+    timeJ = []
+    timeLU = []
+    for i in size:
+        N = i
+        A = Matrix(N,N, 12, -1, -1)
+        b = Matrix(N,1, 0, 0, 0)
+
+        start_time = time.time()
+        [r, iterations, residuum] = Jacobi(A, b)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        timeJ.append(execution_time)
+
+
+        start_time = time.time()
+        [r, iterations, residuum] = GaussSeidl(A, b)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        timeGS.append(execution_time)
+
+
+        start_time = time.time()
+        [r, residuum] = factorizationLU(A, b)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        timeLU.append(execution_time)
+    plotTime("Jacobi",timeJ)
+    plotTime("Gauss-Seidl",timeGS)
+    plotTime("faktoryzacja LU",timeLU)
