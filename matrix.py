@@ -108,7 +108,12 @@ class Matrix:
         value = 0
         for row in self.matrix:
             for element in row:
-                value += element**2
+                try:
+                    value += element ** 2
+                except OverflowError as e:
+
+                    return  math.sqrt(value)
+
 
         return math.sqrt(value)
 
