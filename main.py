@@ -4,8 +4,32 @@ import numpy as np
 import time
 
 
+def jacobi(A, b):
+    r = Matrix(A.n, 1, 0, 0, 0, 1)
+    iterations = 1000
+    residuum = []
+    for k in range(1000):
+        old = r.multiplicationByNumber(1)
+        for i in range(r.n):
+            sum_ = 0
+            for j in range(A.n):
+                if j != i:
+                    sum_ += A.matrix[i][j] * old.matrix[j][0]
+
+            r.matrix[i][0] = (1 / A.matrix[i][i]) * (b.matrix[i][0] - sum_)
+
+        result = A.multiplication(r)
+        errorNorm = result.addition(b.multiplicationByNumber(-1))
+        norm = errorNorm.normMaxAbs()
+        residuum.append(norm)
+        if norm < 10 ** -9 or norm > 10 ** 9:
+            iterations = k + 1
+            break
+    return (r, iterations, residuum)
+
+
 def Jacobi(A, b):
-    r = Matrix(A.n,1, 0, 0, 0, 1)
+    r = Matrix(A.n, 1, 0, 0, 0, 1)
     U = A.upper()
     L = A.lower()
     D = A.diagonal()
@@ -19,7 +43,7 @@ def Jacobi(A, b):
         r = bm.addition(r)
         result = A.multiplication(r)
         errorNorm = result.addition(b.multiplicationByNumber(-1))
-        norm = errorNorm.norm()
+        norm = errorNorm.normMaxAbs()
         residuum.append(norm)
         if norm < 10 ** -9:
             iterations = i + 1
@@ -27,8 +51,30 @@ def Jacobi(A, b):
     return (r, iterations, residuum)
 
 
+def gaussSeidl(A, b):
+    r = Matrix(A.n, 1, 0, 0, 0, 1)
+    iterations = 1000
+    residuum = []
+    for k in range(1000):
+        for i in range(r.n):
+            sum_ = 0
+            for j in range(A.n):
+                if j != i:
+                    sum_ += A.matrix[i][j] * r.matrix[j][0]
+            r.matrix[i][0] = (1 / A.matrix[i][i]) * (b.matrix[i][0] - sum_)
+
+        result = A.multiplication(r)
+        errorNorm = result.addition(b.multiplicationByNumber(-1))
+        norm = errorNorm.normMaxAbs()
+        residuum.append(norm)
+        if norm < 10 ** -9 or norm > 10 ** 9:
+            iterations = k + 1
+            break
+    return (r, iterations, residuum)
+
+
 def GaussSeidl(A, b):
-    r = Matrix(A.n,1, 0, 0, 0, 1)
+    r = Matrix(A.n, 1, 0, 0, 0, 1)
     U = A.upper()
     L = A.lower()
     D = A.diagonal()
@@ -50,98 +96,120 @@ def GaussSeidl(A, b):
             break
     return (r, iterations, residuum)
 
-def distributionLU(A,b):
-    L = Matrix(A.n,A.n, 1, 0, 0)
+
+def distributionLU(A):
+    L = Matrix(A.n, A.n, 1, 0, 0)
     U = A.multiplicationByNumber(1)
-    for k in range(A.n-1):
-        for j in range(k+1,A.n):
-            L.matrix[j][k] = U.matrix[j][k]/U.matrix[k][k]
-            #U.matrix[j][k:A.n] = U.matrix[j][k:A.n] - L.matrix[j][k]*U.matrix[j][k:A.n]
-            # multiplier = L.matrix[j][k]
-            # sequence = U.matrix[j][k:A.n]
-            # U.matrix[j][k:A.n] =[x-x * multiplier for x in sequence]
-            for m in range(k,A.n):
-                U.matrix[j][m] = U.matrix[j][m] - U.matrix[k][m]*L.matrix[j][k]
-    return U,L
-def factorizationLU(A,b):
-    [U,L] = distributionLU(A,b)
-    Y = forwardSubstitution(L,b)
-    X = backwardSubstitution(U,Y)
+    for k in range(A.n - 1):
+        for j in range(k + 1, A.n):
+            L.matrix[j][k] = U.matrix[j][k] / U.matrix[k][k]
+            for m in range(k, A.n):
+                U.matrix[j][m] = U.matrix[j][m] - U.matrix[k][m] * L.matrix[j][k]
+    return U, L
+
+def DistributionLU(A):
+    L = Matrix(A.n, A.n, 1, 0, 0)
+    U = A.multiplicationByNumber(1)
+    for i in range(2,A.n+1):
+        for j in range(1,i):
+            L.matrix[i-1][j-1] = U.matrix[i-1][j-1]/U.matrix[j-1][j-1]
+            for m in range(A.n):
+                U.matrix[i-1][m] = U.matrix[i-1][m] - U.matrix[j-1][m] * L.matrix[i-1][j-1]
+    return U, L
+
+
+def factorizationLU(A, b):
+    [U, L] = distributionLU(A)
+    Y = forwardSubstitution(L, b)
+    X = backwardSubstitution(U, Y)
     result = A.multiplication(X)
     errorNorm = result.addition(b.multiplicationByNumber(-1))
     norm = errorNorm.norm()
 
-    return X,norm
+    return X, norm
+
 
 def forwardSubstitution(L, B):
-    r = Matrix(B.n,B.col, 0, 0, 0, 1)
-    for k in range(B.col):
-        for i in range(L.n):
-            x = 0
-            for j in range(i):
-                x += L.matrix[i][j] * r.matrix[j][k]
-            r.matrix[i][k] = (B.matrix[i][k] - x) / L.matrix[i][i]
+    r = Matrix(B.n, B.col, 0, 0, 0, 1)
+
+    for i in range(L.n):
+        x = 0
+        for j in range(i):
+            x += L.matrix[i][j] * r.matrix[j][0]
+        r.matrix[i][0] = (B.matrix[i][0] - x) / L.matrix[i][i]
+
     return r
+
 
 def backwardSubstitution(U, B):
-    r = Matrix(B.n,B.col, 0, 0, 0, 1)
-    for k in range(B.col):
-        for i in range(U.n-1,-1,-1):
-            x = 0
-            for j in range(U.n-1,i,-1):
-                x += U.matrix[i][j] * r.matrix[j][k]
-            r.matrix[i][k] = (B.matrix[i][k] - x) / U.matrix[i][i]
+    r = Matrix(B.n, B.col, 0, 0, 0, 1)
+    for i in range(U.n - 1, -1, -1):
+        x = 0
+        for j in range(U.n - 1, i, -1):
+            x += U.matrix[i][j] * r.matrix[j][0]
+        r.matrix[i][0] = (B.matrix[i][0] - x) / U.matrix[i][i]
     return r
 
 
-def plotTime(method,time):
-    plt.plot(size, time)
+def plotTime(timeJ, timeGS, timeLU):
+    plt.plot(size, timeJ, label='Metoda Jacobiego')
+    plt.plot(size, timeGS, label='Metoda Gaussa-Seidla')
+    plt.plot(size, timeLU, label='Metoda faktoryzacji LU')
     plt.xlabel("rozmiar macierzy")
-    plt.ylabel("czas obliczeń")
-    title = "["+method+"]"
+    plt.ylabel("czas obliczeń w sekundach")
+    title = "czas trwania obliczeń w zależności od rozmiaru macierzy"
     plt.title(title)
+    plt.legend()
     plt.show()
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    N = 10
-    A = Matrix(N,N, 3, -1, -1)
-    b = Matrix(N,1, 0, 0, 0)
+    N = 940
+    A = Matrix(N, N, 3, -1, -1)
+    b = Matrix(N, 1, 0, 0, 0)
     start_time = time.time()
-    [r, iterations, residuum] = Jacobi(A, b)
+    [r, iterationsJ, residuumJ] = jacobi(A, b)
     end_time = time.time()
     execution_time = end_time - start_time
-    print("Czas obliczeń metodą Jacobiego: ",execution_time," ")
+    print("Czas obliczeń metodą Jacobiego: ", execution_time, " ")
 
     print(r.matrix)
-    print(iterations)
-    iter = list(range(iterations))
-    plt.plot(iter, residuum)
+    print(iterationsJ)
+    iter = list(range(iterationsJ))
+    plt.plot(iter, residuumJ)
     plt.yscale('log')
     plt.xlabel("iteracje")
     plt.ylabel("wrtość normy residuum")
     plt.title("zmiana normy residuum w kolejnych iteracjach [Jacobi]")
-    plt.xticks(range(0, len(iter) + 1, 50))
+    plt.xticks(range(0, len(iter) + 1, 5))
+
+    plt.axhline(y=1e9, color='r', linestyle='--', label='górna granica')
+    plt.legend()
     plt.show()
 
     start_time = time.time()
-    [r, iterations, residuum] = GaussSeidl(A, b)
+    [r, iterationsG, residuumG] = gaussSeidl(A, b)
     end_time = time.time()
     execution_time = end_time - start_time
     print("Czas obliczeń metodą Gaussa-Seidla: ", execution_time, " ")
 
     print(r.matrix)
-    print(iterations)
-    iter = list(range(iterations))
-    plt.plot(iter, residuum)
+    print(iterationsG)
+    iterG = list(range(iterationsG))
+    plt.plot(iterG, residuumG)
+    # plt.plot(iterG, residuumG,label='Metoda Gaussa-Seidla')
     plt.yscale('log')
     plt.xlabel("iteracje")
     plt.ylabel("wrtość normy residuum")
     plt.title("zmiana normy residuum w kolejnych iteracjach [Gauss-Seidl]")
-    plt.xticks(range(0, len(iter) + 1, 50))
+    # plt.title("zmiana normy residuum w kolejnych iteracjach ")
+    plt.xticks(range(0, len(iterG) + 1, 2))
+    plt.axhline(y=1e9, color='r', linestyle='--', label='górna granica')
+    plt.legend()
     plt.show()
-    # # Przykładowa macierz współczynników A i wektor prawych stron b
+
+    # Przykładowa macierz współczynników A i wektor prawych stron b
 
     A1 = A.to_np_array()
     b1 = b.to_np_array()
@@ -154,38 +222,35 @@ if __name__ == '__main__':
     [r, residuum] = factorizationLU(A, b)
     end_time = time.time()
     execution_time = end_time - start_time
-    print("LU: ",r.matrix)
-    print(residuum)
-    print("Czas obliczeń metodą faktoryzacji LU: ", execution_time, " ")
+    print("LU: ", r.matrix)
+    print()
+    print("Wartość normy residuum: ", residuum)
+    print("Czas obliczeń metodą faktoryzacji LU: ", execution_time, " s")
 
-    size = [10,50,100,200,400]
+    size = [100, 500,1000,1500]
     timeGS = []
     timeJ = []
     timeLU = []
     for i in size:
         N = i
-        A = Matrix(N,N, 12, -1, -1)
-        b = Matrix(N,1, 0, 0, 0)
+        A = Matrix(N, N, 12, -1, -1)
+        b = Matrix(N, 1, 0, 0, 0)
 
         start_time = time.time()
-        [r, iterations, residuum] = Jacobi(A, b)
+        [r, iterations, residuum] = jacobi(A, b)
         end_time = time.time()
         execution_time = end_time - start_time
         timeJ.append(execution_time)
 
-
         start_time = time.time()
-        [r, iterations, residuum] = GaussSeidl(A, b)
+        [r, iterations, residuum] = gaussSeidl(A, b)
         end_time = time.time()
         execution_time = end_time - start_time
         timeGS.append(execution_time)
-
 
         start_time = time.time()
         [r, residuum] = factorizationLU(A, b)
         end_time = time.time()
         execution_time = end_time - start_time
         timeLU.append(execution_time)
-    plotTime("Jacobi",timeJ)
-    plotTime("Gauss-Seidl",timeGS)
-    plotTime("faktoryzacja LU",timeLU)
+    plotTime(timeJ, timeGS, timeLU)
